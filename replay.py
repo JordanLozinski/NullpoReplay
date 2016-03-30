@@ -7,16 +7,20 @@
 #0.statistics.ppm is global ppm
 #0.statistics.finesse is global finesse 
 import os, datetime
-from sys import argv
-class Replay(object): #essentially used as a struct
-	def __init__(self, time, date, num_frames, pieces, finesse):
-		self.hours, self.minutes, self.seconds = time.split("\:")
-		self.year, self.month, self.day = date.split("/")
-		self.frames = int(num_frames)
-		self.pieces = int(pieces)
-		self.finesse = int(finesse)
-		#self.datetime = datetime.datetime.strptime(date+"/"+"/".join(time.split("\:")),'%Y/%m/%d/%H/%M/%S')
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
+from sys import argv
+
+class Replay(object): #essentially used as a struct
+	def __init__(self, time, date, num_frames, pieces, finesse, pps, filename):
+		self.frames = num_frames
+		self.pieces = pieces
+		self.finesse = finesse
+		self.pps = pps
+		self.datetime = datetime.datetime.strptime(date.rstrip("\n")+"/"+"/".join(time.rstrip("\n").split("\:")),'%Y/%m/%d/%H/%M/%S')
+		self.filename = filename
 
 replays = []
 counter = 0
@@ -38,22 +42,30 @@ for replay in os.listdir(argv[1]):
 		elif line[0] == "timestamp.date":
 			date = line[1]
 		elif line[0] == "result.time":
-			num_frames = line[1]
-			if int(line[1]) < 2520 and int(line[1]) > 2460:
-				print(filename + " " + line[1])
+			num_frames = int(line[1])
 		elif line[0] == "0.statistics.totalPieceLocked":
-			pieces = line[1]
+			pieces = int(line[1])
 		elif line[0] == "0.statistics.finesse":
-			finesse = line[1]
-		elif line[0] == "name.mode":
+			finesse = int(line[1])
+		elif line[0] == "name.mode" and line[1] == "LINE RACE\n":
 			sprint = True
-	if sprint:
-		i=Replay(time, date, num_frames, pieces, finesse)
+		elif line[0] == "0.statistics.pps":
+			pps = float(line[1].strip('\n'))
+	if sprint and pieces > 100:
+		i = Replay(time, date, num_frames, pieces, finesse, pps, filename)
 		replays.append(i)
-		counter += 1
+print(len(replays))
 
-print(counter)
+dates = mdates.date2num([x.datetime for x in replays])
+values = [x.frames/60 for x in replays]
+plt.plot_date(dates, values)
 
+print(np.polyfit(dates, values, 3))
+plt.plot(m, b)
+plt.show()
+
+#plot goals:
+#y is pps. x is date every 10 days up to now
 
 
 
