@@ -24,44 +24,48 @@ class Replay(object): #essentially used as a struct
 
 replays = []
 counter = 0
-
-for replay in os.listdir(argv[1]):
-	time = ""
-	date = ""
-	sprint = False
-	num_frames = ""
-	pieces = ""
-	finesse = ""
-	timeElapsed = ""
-	filename = replay
-	replay = open(argv[1]+"\\"+replay)
-	for line in replay:
-		line = line.split("=")
-		if line[0] == "timestamp.time":
-			time = line[1]
-		elif line[0] == "timestamp.date":
-			date = line[1]
-		elif line[0] == "result.time":
-			num_frames = int(line[1])
-		elif line[0] == "0.statistics.totalPieceLocked":
-			pieces = int(line[1])
-		elif line[0] == "0.statistics.finesse":
-			finesse = int(line[1])
-		elif line[0] == "name.mode" and line[1] == "LINE RACE\n":
-			sprint = True
-		elif line[0] == "0.statistics.pps":
-			pps = float(line[1].strip('\n'))
-	if sprint and pieces > 100:
-		i = Replay(time, date, num_frames, pieces, finesse, pps, filename)
-		replays.append(i)
+for c in argv[1:]:
+	for replay in os.listdir(c):
+		time = ""
+		date = ""
+		sprint = False
+		num_frames = ""
+		pieces = ""
+		finesse = ""
+		timeElapsed = ""
+		filename = replay
+		replay = open(argv[1]+"\\"+replay)
+		for line in replay:
+			line = line.split("=")
+			if line[0] == "timestamp.time":
+				time = line[1]
+			elif line[0] == "timestamp.date":
+				date = line[1]
+			elif line[0] == "result.time":
+				num_frames = int(line[1])
+			elif line[0] == "0.statistics.totalPieceLocked":
+				pieces = int(line[1])
+			elif line[0] == "0.statistics.finesse":
+				finesse = int(line[1])
+			elif line[0] == "name.mode" and line[1] == "LINE RACE\n":
+				sprint = True
+			elif line[0] == "0.statistics.pps":
+				pps = float(line[1].strip('\n'))
+		if sprint and pieces > 100:
+			i = Replay(time, date, num_frames, pieces, finesse, pps, filename)
+			replays.append(i)
 print(len(replays))
 
 dates = mdates.date2num([x.datetime for x in replays])
-values = [x.frames/60 for x in replays]
+values = [x.pps for x in replays]
 plt.plot_date(dates, values)
 
-print(np.polyfit(dates, values, 3))
-plt.plot(m, b)
+mb = np.polyfit(dates, values, 10) #returns polynomial coefficients
+poly = np.poly1d(mb)
+
+xpoints = np.linspace(min(dates),max(dates),100)
+plt.plot(color=)
+plt.plot(xpoints,poly(xpoints),color="#F09902",linestyle='solid', linewidth=2.0)
 plt.show()
 
 #plot goals:
