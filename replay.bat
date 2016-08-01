@@ -1,1 +1,1 @@
-python replay.py %1
+python replay.py

@@ -5,10 +5,23 @@
 #0.statistics.totalPieceLocked is the amount of pieces placed
 #0.statistics.pps is global pps
 #0.statistics.ppm is global ppm
-#0.statistics.finesse is global finesse 
+#0.statistics.finesse is global finesse
+
 #Future ideas: limiting scope of plot for pieces, plotting ekpt/kpt
 #things celer.be plots: ppm, time, kpt, finesse, manipulations (rotations, moves) and pieces
-#checking that the gamemode was sprint, labeling axes
+#checking that the gamemode was sprint
+#	name.mode=LINE RACE
+#checking that the options are consistent.. e.g 40L vs 100L
+#labeling axes
+
+#plotting variance:
+#	Checkbox that says variance
+#	Calculate variance within a certain timeframe (only present and past) 
+#	and weigh the results by recentness (maybe linear but perhaps something more complex)
+#	use an anonymous function to describe the weight curve
+
+
+
 import os, datetime
 import numpy as np
 import matplotlib.pyplot as plt
@@ -42,6 +55,7 @@ def calculate(*args):
     
 def plot(*args):
 	global oldContents
+	global replays
 	varb = varbox.get()
 	while varb not in (1,2,3,4):
 		break
