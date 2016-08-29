@@ -45,13 +45,6 @@ class Replay(object): #essentially used as a struct
 		self.pps = pps
 		self.datetime = datetime.datetime.strptime(date.rstrip("\n")+"/"+"/".join(time.rstrip("\n").split("\:")),'%Y/%m/%d/%H/%M/%S')
 		self.filename = filename
-
-def calculate(*args):
-    try:
-        value = float(feet.get())
-        meters.set((0.3048 * value * 10000.0 + 0.5)/10000.0)
-    except ValueError:
-        pass
     
 def plot(*args):
 	global oldContents
@@ -143,7 +136,6 @@ pathtext = tk.Text(mainframe, width=20, height=5, wrap="none")
 pathtext.grid(column=0, row=1, columnspan=2)
 
 for child in mainframe.winfo_children(): child.grid_configure(padx=5, pady=5) 	
-root.bind('<Return>', calculate)
 
 root.mainloop()
 
