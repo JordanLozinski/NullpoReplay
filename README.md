@@ -10,7 +10,7 @@ ReplayMino is written in Python 3, utilizing Tk for the GUI and matplotlib for p
 
 # Pictures
 
-![GUI](https://github.com/JordanLozinski/ReplayMino/demo/GUI.png) ![Graph](https://github.com/JordanLozinski/ReplayMino/demo/graph.png)
+![Graph](https://github.com/JordanLozinski/ReplayMino/raw/master/demo/graph.png) ![GUI](https://github.com/JordanLozinski/ReplayMino/raw/master/demo/gui.png)
 
 # Planned Features:
 
