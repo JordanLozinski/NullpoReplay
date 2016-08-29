@@ -5,7 +5,7 @@ ReplayMino is written in Python 3, utilizing Tk for the GUI and matplotlib for p
 # Features
 
 * Graph PPS, finesse, time, or pieces over time
-* Graph from multilple sources of replays (i.e, from different Nullpomino clients)
+* Graph from multiple sources of replays (i.e, from different Nullpomino clients)
 * Graphs a best fit line (in orange) for the data
 
 # Pictures
