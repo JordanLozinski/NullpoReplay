@@ -6,6 +6,7 @@
 #0.statistics.pps is global pps
 #0.statistics.ppm is global ppm
 #0.statistics.finesse is global finesse
+#0.statistics.kpt is kpt
 
 #Future ideas: limiting scope of plot for pieces, plotting ekpt/kpt
 #things celer.be plots: ppm, time, kpt, finesse, manipulations (rotations, moves) and pieces
@@ -19,6 +20,8 @@
 #	Calculate variance within a certain timeframe (only present and past) 
 #	and weigh the results by recentness (maybe linear but perhaps something more complex)
 #	use an anonymous function to describe the weight curve
+
+#making this code easier to modify
 
 
 
@@ -38,13 +41,14 @@ counter = 0
 oldContents = ""
 
 class Replay(object): #essentially used as a struct
-	def __init__(self, time, date, num_frames, pieces, finesse, pps, filename):
+	def __init__(self, time, date, num_frames, pieces, finesse, pps, filename, kpt):
 		self.frames = num_frames
 		self.pieces = pieces
 		self.finesse = finesse
 		self.pps = pps
 		self.datetime = datetime.datetime.strptime(date.rstrip("\n")+"/"+"/".join(time.rstrip("\n").split("\:")),'%Y/%m/%d/%H/%M/%S')
 		self.filename = filename
+		self.kpt = kpt
     
 def plot(*args):
 	global oldContents
@@ -53,7 +57,7 @@ def plot(*args):
 	while varb not in (1,2,3,4):
 		break
 		#send a mean error dialog
-	switch = {"PPS" : 1, "Time" : 2, "Finesse" : 3, "Pieces" : 4}[varb]
+	switch = {"PPS" : 1, "Time" : 2, "Finesse" : 3, "Pieces" : 4, "KPT" : 5}[varb]
 	if pathtext.get(1.0, tk.END) != oldContents: #if the filepaths have changed since we last populated the replays thing
 		replays = []
 		for c in replayFolders:
@@ -66,6 +70,7 @@ def plot(*args):
 				finesse = ""
 				timeElapsed = ""
 				filename = replay
+				kpt = -1
 				replay = open(c+"\\"+replay)
 				for line in replay:
 					line = line.split("=")
@@ -83,8 +88,10 @@ def plot(*args):
 						sprint = True
 					elif line[0] == "0.statistics.pps":
 						pps = float(line[1].strip('\n'))
+					elif line[0] == "0.statistics.kpt":
+						kpt = float(line[1])
 				if sprint and pieces > 100:
-					i = Replay(time, date, num_frames, pieces, finesse, pps, filename)
+					i = Replay(time, date, num_frames, pieces, finesse, pps, filename, kpt)
 					replays.append(i)
 	else:
 		print("Detected no filepath change - using cached replayFolders")
@@ -100,6 +107,8 @@ def plot(*args):
 		values = [x.finesse for x in replays]
 	elif switch == 4:
 		values = [x.pieces for x in replays]
+	elif switch == 5:
+		values = [x.kpt for x in replays]
 	plt.plot_date(dates, values)
 
 	mb = np.polyfit(dates, values, 10) #returns polynomial coefficients
@@ -131,7 +140,7 @@ browsebtn = ttk.Button(mainframe, text="Browse", command=fileDialog).grid(column
 plotbtn = ttk.Button(mainframe, text="Plot", command=plot).grid(column=1, row=2)
 varbox = ttk.Combobox(mainframe, textvariable=varvar)
 varbox.grid(column=0,row=2)
-varbox['values'] = ('PPS', 'Time', 'Finesse', 'Pieces')
+varbox['values'] = ('PPS', 'Time', 'Finesse', 'Pieces', 'KPT')
 pathtext = tk.Text(mainframe, width=20, height=5, wrap="none")
 pathtext.grid(column=0, row=1, columnspan=2)
 
@@ -146,6 +155,3 @@ root.mainloop()
 
 #plot goals:
 #y is pps. x is date every 10 days up to now
-
-
-

@@ -16,9 +16,9 @@ ReplayMino is currently only meant for use with 40 line sprint replays.
 # Planned Features:
 
 * Plotting variance of different variables over time (local variance, not variance irrespective of time)
-* Plotting kpt/ekpt
 * Caching source folders for replays, so they don't have to be inputted everytime the tool is used
 * Expanding to allow analysis for different gamemodes, like 100L sprint or Marathon.
+* A curve describing the max/min of a given variable
 
 # Contact
 
