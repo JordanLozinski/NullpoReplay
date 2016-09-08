@@ -8,7 +8,7 @@
 #0.statistics.finesse is global finesse
 #0.statistics.kpt is kpt
 
-#Future ideas: limiting scope of plot for pieces, plotting ekpt/kpt
+#Future ideas: limiting scope of plot for pieces
 #things celer.be plots: ppm, time, kpt, finesse, manipulations (rotations, moves) and pieces
 #checking that the gamemode was sprint
 #	name.mode=LINE RACE
@@ -41,9 +41,12 @@ counter = 0
 oldContents = ""
 
 class Replay(object): #essentially used as a struct
-	def __init__(self, time, date, num_frames, pieces, finesse, pps, filename, kpt):
+
+	gamemodedict = {"LINE RACE" : 0, "MARATHON" : 1}
+	def __init__(self, time, date, gamemode, num_frames, pieces, finesse, pps, filename, kpt):
 		self.frames = num_frames
 		self.pieces = pieces
+		self.gamemode = gamemode
 		self.finesse = finesse
 		self.pps = pps
 		self.datetime = datetime.datetime.strptime(date.rstrip("\n")+"/"+"/".join(time.rstrip("\n").split("\:")),'%Y/%m/%d/%H/%M/%S')
@@ -64,7 +67,7 @@ def plot(*args):
 			for replay in os.listdir(c):
 				time = ""
 				date = ""
-				sprint = False
+				gamemode = ""
 				num_frames = ""
 				pieces = ""
 				finesse = ""
@@ -84,21 +87,21 @@ def plot(*args):
 						pieces = int(line[1])
 					elif line[0] == "0.statistics.finesse":
 						finesse = int(line[1])
-					elif line[0] == "name.mode" and line[1] == "LINE RACE\n":
-						sprint = True
+					elif line[0] == "name.mode":
+						gamemode = line[1]
 					elif line[0] == "0.statistics.pps":
 						pps = float(line[1].strip('\n'))
 					elif line[0] == "0.statistics.kpt":
 						kpt = float(line[1])
 				if sprint and pieces > 100:
-					i = Replay(time, date, num_frames, pieces, finesse, pps, filename, kpt)
+					i = Replay(time, date, gamemode, num_frames, pieces, finesse, pps, filename, kpt)
 					replays.append(i)
 	else:
 		print("Detected no filepath change - using cached replayFolders")
 
 	oldContents = pathtext.get(1.0, tk.END)
 
-	dates = mdates.date2num([x.datetime for x in replays])
+	dates = mdates.date2num([x.datetime for x in replays]) #if x.gamemode == (grab gamemode from gui)
 	if switch == 1:	
 		values = [x.pps for x in replays]
 	elif switch == 2:
@@ -136,13 +139,34 @@ mainframe.rowconfigure(0, weight=1)
 varvar = tk.StringVar()
 varvar.set("Variable")
 
-browsebtn = ttk.Button(mainframe, text="Browse", command=fileDialog).grid(column=0, row=0, columnspan=2)
+gamevar = tk.StringVar()
+gamevar.set("Gamemode")
+
+browsebtn = ttk.Button(mainframe, text="Browse", command=fileDialog).grid(column=0, row=0, columnspan=3)
 plotbtn = ttk.Button(mainframe, text="Plot", command=plot).grid(column=1, row=2)
-varbox = ttk.Combobox(mainframe, textvariable=varvar)
+
+varbox = ttk.Combobox(mainframe, textvariable=varvar, width=12)
 varbox.grid(column=0,row=2)
 varbox['values'] = ('PPS', 'Time', 'Finesse', 'Pieces', 'KPT')
-pathtext = tk.Text(mainframe, width=20, height=5, wrap="none")
-pathtext.grid(column=0, row=1, columnspan=2)
+
+gamemodesbox = ttk.Combobox(mainframe, textvariable=gamevar, width=12)
+gamemodesbox.grid(column=0, row=3)
+gamemodesbox['values'] = ('Line Race 40L', 'Line Race 20L', 'Line Race 10L', 'Line Race 100L', 'Marathon')
+
+maxvar = tk.BooleanVar()
+maxbutton = ttk.Checkbutton(mainframe, text='Plot max value', variable=maxvar)
+maxbutton.grid(column=1, row=3)
+
+minvar = tk.BooleanVar()
+minbutton = ttk.Checkbutton(mainframe, text='Plot min value', variable=minvar, width=13)
+minbutton.grid(column=2, row=3)
+
+variancevar = tk.BooleanVar()
+variancebutton = ttk.Checkbutton(mainframe, text='Plot variance', variable=variancevar, width=13)
+variancebutton.grid(column=2, row=2)
+
+pathtext = tk.Text(mainframe, width=40, height=5, wrap="none")
+pathtext.grid(column=0, row=1, columnspan=3)
 
 for child in mainframe.winfo_children(): child.grid_configure(padx=5, pady=5) 	
 
