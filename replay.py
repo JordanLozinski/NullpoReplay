@@ -40,10 +40,9 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 
-replayFolders = []
 replays = []
 counter = 0
-oldContents = ""
+oldCounter = 0
 
 class Replay(object): #essentially used as a struct
 	def __init__(self, time, date, gamemode, num_frames, pieces, finesse, pps, filename, kpt, **gameargs):
@@ -55,17 +54,21 @@ class Replay(object): #essentially used as a struct
 		self.datetime = datetime.datetime.strptime(date.rstrip("\n")+"/"+"/".join(time.rstrip("\n").split("\:")),'%Y/%m/%d/%H/%M/%S')
 		self.filename = filename
 		self.kpt = kpt
-		if "sprinttype" in gameargs.keys():
-			self.lines = {0:20,1:40,2:100,3:10}[gameargs["goaltype"]]			
-    
+		if "goaltype" in gameargs.keys():
+			try:
+				self.linecount = {0:20,1:40,2:100,3:10}[gameargs["goaltype"]] #Converts the goaltype variable to a useful number (number of lines)
+			except Exception:
+				print("Invalid goaltype?") #This should never happen. Goaltype is constrained by the client. But a person (or some kind of drive error) could modify a replay.
+			self.gametype = self.gamemode + str(self.linecount) + "L" #convert the string to something that be compared to our gui string
+			print(self.gametype)
 def plot(*args):
-	global oldContents
+	global oldCounter
 	global replays
-	varswitch = {"PPS" : 1, "Time" : 2, "Finesse" : 3, "Pieces" : 4, "KPT" : 5}[varbox.get()]
-	modeswitch = {"Line Race 40L" : 1, "Line Race 20L" : 1, "Line Race 10L" : 1, "Line Race 100L": 1, "Marathon" : 2}[gamemodesbox.get()]
-	if pathtext.get(1.0, tk.END) != oldContents: #if the filepaths have changed since we last populated the replays thing
+	
+	if counter != oldCounter:
 		replays = []
-		for c in replayFolders:
+		for c in pathlist.get(0, tk.END):
+			print(c)
 			for replay in os.listdir(c):
 				time = ""
 				date = ""
@@ -98,40 +101,67 @@ def plot(*args):
 						kpt = float(line[1])
 					elif line[0] == "linerace.goaltype.-1":
 						gamemode = "LINE RACE"
-						kwargs["goaltype"] = int(line[1])
+						kwargs["goaltype"] = int(line[1]) 
+				if gamemode in ("LINE RACE", "MARATHON"):
 					i = Replay(time, date, gamemode, num_frames, pieces, finesse, pps, filename, kpt, kwargs)
 					replays.append(i)
 	else:
-		print("Detected no filepath change - using cached replayFolders")
+		print("Detected no filepath change - using cached folders")
 
-	oldContents = pathtext.get(1.0, tk.END)
+	oldCounter = counter
 
-	dates = mdates.date2num([x.datetime for x in replays]) #if x.gamemode == (grab gamemode from gui)
+	varswitch = {"PPS" : 1, "Time" : 2, "Finesse" : 3, "Pieces" : 4, "KPT" : 5}[varbox.get()]
+
+	typedreplays = [x for x in replays if x.gametype.lower() == gamemodesbox.get().lower()] #so we only parse the replays of the relevant gamemode :3c
+
+	dates = mdates.date2num([x.datetime for x in typedreplays]) 	
 	if varswitch == 1:	
-		values = [x.pps for x in replays]
+		values = [x.pps for x in typedreplays]
 	elif varswitch == 2:
-		values = [x.frames/60 for x in replays]
+		values = [x.frames/60 for x in typedreplays]
 	elif varswitch == 3:
-		values = [x.finesse for x in replays]
+		values = [x.finesse for x in typedreplays]
 	elif varswitch == 4:
-		values = [x.pieces for x in replays]
+		values = [x.pieces for x in typedreplays]
 	elif varswitch == 5:
-		values = [x.kpt for x in replays]
+		values = [x.kpt for x in typedreplays]
 	plt.plot_date(dates, values)
+
+	if maxvar.get(): #plot max
+		maxvals = [values[0]]
+		maxx = maxvals[0]
+		for x in values:
+			if x > maxx:
+				maxvals.append(x)
+				maxx = x
+	plt.plot_date(dates, maxvals)
 
 	mb = np.polyfit(dates, values, 10) #returns polynomial coefficients
 	poly = np.poly1d(mb)
 
+	maxmb = np.polyfit(dates, maxvals, 10)
+	maxpoly = np.poly1d(maxmb)
+
 	xpoints = np.linspace(min(dates),max(dates),100)
-	plt.plot()
+	#plt.plot()
 	plt.plot(xpoints,poly(xpoints),color="#F09902",linestyle='solid', linewidth=2.0)
+	plt.plot(xpoints,maxpoly(xpoints), color="#ff0000", linestyle='solid', linewidth=2.0)
 	plt.show()
 
 def fileDialog(*args):
+	global counter
 	a = filedialog.askdirectory(title="Directory Select")
-	replayFolders.append(a)
-	pathtext.insert(tk.END, a+"\n")
+	print(type(a))
+	counter += 1
+	pathlist.insert(tk.END, a)
 
+def deletePath(*args):
+	global counter
+	try:
+		pathlist.delete(*pathlist.curselection())
+		counter += 1
+	except TypeError:
+		print("Nothing was selected to delete.")
 
 root = tk.Tk()
 root.title("Replaymino")
@@ -149,6 +179,7 @@ gamevar.set("Gamemode")
 
 browsebtn = ttk.Button(mainframe, text="Browse", command=fileDialog).grid(column=0, row=0, columnspan=3)
 plotbtn = ttk.Button(mainframe, text="Plot", command=plot).grid(column=1, row=2)
+deletebtn = ttk.Button(mainframe, text="X", command=deletePath, width="3").grid(column=2, row=1, sticky=tk.E)
 
 varbox = ttk.Combobox(mainframe, textvariable=varvar, width=12)
 varbox.grid(column=0,row=2)
@@ -170,17 +201,9 @@ variancevar = tk.BooleanVar()
 variancebutton = ttk.Checkbutton(mainframe, text='Plot variance', variable=variancevar, width=13)
 variancebutton.grid(column=2, row=2)
 
-pathtext = tk.Text(mainframe, width=40, height=5, wrap="none")
-pathtext.grid(column=0, row=1, columnspan=3)
+pathlist = tk.Listbox(mainframe, width=40, height=5)
+pathlist.grid(column=0, row=1, columnspan=3)
 
 for child in mainframe.winfo_children(): child.grid_configure(padx=5, pady=5) 	
 
 root.mainloop()
-
-
-
-
-
-
-#plot goals:
-#y is pps. x is date every 10 days up to now
