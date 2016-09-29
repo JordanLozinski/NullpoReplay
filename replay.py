@@ -59,8 +59,7 @@ class Replay(object): #essentially used as a struct
 				self.linecount = {0:20,1:40,2:100,3:10}[gameargs["goaltype"]] #Converts the goaltype variable to a useful number (number of lines)
 			except Exception:
 				print("Invalid goaltype?") #This should never happen. Goaltype is constrained by the client. But a person (or some kind of drive error) could modify a replay.
-			self.gametype = self.gamemode + str(self.linecount) + "L" #convert the string to something that be compared to our gui string
-			print(self.gametype)
+			self.gametype = self.gamemode + " " + str(self.linecount) + "L" #convert the string to something that be compared to our gui string
 def plot(*args):
 	global oldCounter
 	global replays
@@ -103,7 +102,7 @@ def plot(*args):
 						gamemode = "LINE RACE"
 						kwargs["goaltype"] = int(line[1]) 
 				if gamemode in ("LINE RACE", "MARATHON"):
-					i = Replay(time, date, gamemode, num_frames, pieces, finesse, pps, filename, kpt, kwargs)
+					i = Replay(time, date, gamemode, num_frames, pieces, finesse, pps, filename, kpt, **kwargs)
 					replays.append(i)
 	else:
 		print("Detected no filepath change - using cached folders")
@@ -130,22 +129,40 @@ def plot(*args):
 	if maxvar.get(): #plot max
 		maxvals = [values[0]]
 		maxx = maxvals[0]
-		for x in values:
-			if x > maxx:
+		maxdates = [maxvals[0].datetime]
+		for x in range(0,len(values)):
+			if values[x] > maxx:
 				maxvals.append(x)
-				maxx = x
-	plt.plot_date(dates, maxvals)
+				maxdates.append(x.datetime)
+				maxx = values[x]
+		plt.plot_date(maxdates, maxvals)
+		
+		maxmb = np.polyfit(maxdates, maxvals, 10)
+		maxpoly = np.poly1d(maxmb)
+		plt.plot(xpoints,maxpoly(xpoints), color="#ff0000", linestyle='solid', linewidth=2.0)
+
+
+	if minvar.get():
+		minvals = [values[0]]
+		minx = minvals[0]
+		mindates = [typedreplays[0].datetime]
+		for x in values:
+			if x < minx:
+				minvals.append(x)
+				mindates.append(x.datetime)
+				minx = x
+		plt.plot_date(mindates, minvals)
+		
+		minmb = np.polyfit(mindates, minvals, 10)
+		minpoly = np.poly1d(minmb)
+		plt.plot(xpoints,minpoly(xpoints), color="#0000ff", linestyle='solid', linewidth=2.0)
 
 	mb = np.polyfit(dates, values, 10) #returns polynomial coefficients
 	poly = np.poly1d(mb)
 
-	maxmb = np.polyfit(dates, maxvals, 10)
-	maxpoly = np.poly1d(maxmb)
-
 	xpoints = np.linspace(min(dates),max(dates),100)
-	#plt.plot()
+
 	plt.plot(xpoints,poly(xpoints),color="#F09902",linestyle='solid', linewidth=2.0)
-	plt.plot(xpoints,maxpoly(xpoints), color="#ff0000", linestyle='solid', linewidth=2.0)
 	plt.show()
 
 def fileDialog(*args):
